@@ -88,6 +88,7 @@ struct	netdump_methods;
 #define	IF_DUNIT_NONE	-1
 
 #include <net/altq/if_altq.h>
+#include <net/af_packet.h>
 
 CK_STAILQ_HEAD(ifnethead, ifnet);	/* we use TAILQs so that the order of */
 CK_STAILQ_HEAD(ifaddrhead, ifaddr);	/* instantiation is preserved in the list */
@@ -142,7 +143,8 @@ struct ifnet_hw_tsomax {
 
 /* Interface encap request types */
 typedef enum {
-	IFENCAP_LL = 1			/* pre-calculate link-layer header */
+	IFENCAP_LL = 1,			/* pre-calculate link-layer header */
+	IFENCAP_LL_MBUF = 2,	/* append link-layer header to mbuf */
 } ife_type;
 
 /*
@@ -160,6 +162,7 @@ typedef enum {
  *     lladdr: pointer to link-layer address
  *     lladdr_len: length of link-layer address
  *     hdata: pointer to L3 header (optional, used for ARP requests).
+ *     proto: value to use in L2 header protocol field in network order
  *   Output data fields:
  *     buf: encap data is stored here
  *     bufsize: resulting encap length is stored here
@@ -168,7 +171,10 @@ typedef enum {
  */
 
 struct if_encap_req {
-	u_char		*buf;		/* Destination buffer (w) */
+	union {
+		u_char		*buf;	/* Destination buffer (w) */
+		struct mbuf	*mb;	/* mbuf to append header to */
+	};
 	size_t		bufsize;	/* size of provided buffer (r) */
 	ife_type	rtype;		/* request type (r) */
 	uint32_t	flags;		/* Request flags (r) */
@@ -177,6 +183,7 @@ struct if_encap_req {
 	int		lladdr_len;	/* lladdr length (r) */
 	char		*lladdr;	/* link-level address pointer (r) */
 	char		*hdata;		/* Upper layer header data (rw) */
+	uint16_t	proto;		/* Protocol field (for AF_PACKET) */
 };
 
 #define	IFENCAP_FLAG_BROADCAST	0x02	/* Destination is broadcast */
@@ -382,6 +389,11 @@ struct ifnet {
 	struct netdump_methods *if_netdump_methods;
 	struct epoch_context	if_epoch_ctx;
 	void 		       *if_unused[4];
+
+	/*
+	 * Filters for AF_PACKET.
+	 */
+	struct af_packet_filters if_packet_filters;
 
 	/*
 	 * Spare fields to be added before branching a stable branch, so

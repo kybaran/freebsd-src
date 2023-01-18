@@ -566,6 +566,10 @@ if_alloc(u_char type)
 	CK_STAILQ_INIT(&ifp->if_addrhead);
 	CK_STAILQ_INIT(&ifp->if_multiaddrs);
 	CK_STAILQ_INIT(&ifp->if_groups);
+	CK_LIST_INIT(&(ifp->if_packet_filters).all_packetpcbs);
+	CK_LIST_INIT(&(ifp->if_packet_filters).in4_packetpcbs);
+	CK_LIST_INIT(&(ifp->if_packet_filters).in6_packetpcbs);
+	CK_LIST_INIT(&(ifp->if_packet_filters).misc_packetpcbs);
 #ifdef MAC
 	mac_ifnet_init(ifp);
 #endif

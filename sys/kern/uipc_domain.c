@@ -313,9 +313,10 @@ pffindproto(int family, int protocol, int type)
 		return (NULL);
 
 	for (pr = dp->dom_protosw; pr < dp->dom_protoswNPROTOSW; pr++) {
-		if ((pr->pr_protocol == protocol) && (pr->pr_type == type))
+		if ((pr->pr_protocol == protocol || pr->pr_flags & PR_ANYPROTO) &&
+		    (pr->pr_type == type))
 			return (pr);
-
+      
 		if (type == SOCK_RAW && pr->pr_type == SOCK_RAW &&
 		    pr->pr_protocol == 0 && maybe == NULL)
 			maybe = pr;

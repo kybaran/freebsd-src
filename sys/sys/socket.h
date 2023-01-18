@@ -265,7 +265,8 @@ struct accept_filter_arg {
 #define	AF_IEEE80211	37		/* IEEE 802.11 protocol */
 #define	AF_INET_SDP	40		/* OFED Socket Direct Protocol ipv4 */
 #define	AF_INET6_SDP	42		/* OFED Socket Direct Protocol ipv6 */
-#define	AF_MAX		42
+#define	AF_PACKET	43		/* Packet Family */
+#define	AF_MAX		43
 /*
  * When allocating a new AF_ constant, please only allocate
  * even numbered constants for FreeBSD until 134 as odd numbered AF_
@@ -651,6 +652,29 @@ struct mmsghdr {
 	ssize_t		msg_len;		/* message length */
 };
 #endif /* __BSD_VISIBLE */
+
+/*
+ * sockaddr for use with an AF_PACKET socket.
+ * */
+struct sockaddr_ll {
+	unsigned char	sll_len;	/* Unused (for compat. with sockaddr layout) */
+	sa_family_t	sll_family;	/* AF_PACKET */
+	u_int		sll_ifindex;	/* Index of local interface */
+	uint16_t	sll_protocol;	/* Ethertype */
+	u_short		sll_hatype;	/* Hardware type */
+	u_char		sll_pkttype;	/* Packet type (see below) */
+	u_char		sll_halen;	/* LL Address Length */
+	u_char		sll_addr[8];	/* LL Address of remote host */
+};
+
+/* Possible values of sll_pkttype */
+enum sk_buff_pkt_type {
+	PACKET_BROADCAST,
+	PACKET_MULTICAST,
+	PACKET_OTHERHOST,
+	PACKET_HOST,
+	PACKET_OUTGOING
+};
 
 #ifndef	_KERNEL
 

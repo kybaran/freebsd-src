@@ -121,6 +121,7 @@ struct protosw {
 #define	PR_RIGHTS	0x10		/* passes capabilities */
 #define PR_IMPLOPCL	0x20		/* implied open/close */
 #define	PR_LASTHDR	0x40		/* enforce ipsec policy; last header */
+#define	PR_ANYPROTO	0x80		/* do not require protocol match */
 
 /*
  * In earlier BSD network stacks, a single pr_usrreq() function pointer was

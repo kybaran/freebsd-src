@@ -70,6 +70,7 @@
 #include <net/pfil.h>
 #include <net/rss_config.h>
 #include <net/vnet.h>
+#include <net/uipc_packet.h>
 
 #include <netpfil/pf/pf_mtag.h>
 
@@ -147,13 +148,18 @@ ether_requestencap(struct ifnet *ifp, struct if_encap_req *req)
 	uint16_t etype;
 	const u_char *lladdr;
 
-	if (req->rtype != IFENCAP_LL)
+	if (req->rtype == IFENCAP_LL) {
+		if (req->bufsize < ETHER_HDR_LEN)
+			return (ENOMEM);
+		eh = (struct ether_header *)req->buf;
+	} else if (req->rtype == IFENCAP_LL_MBUF) {
+		M_PREPEND(req->mb, sizeof(*eh), M_NOWAIT);
+		if (req->mb == NULL)
+			return (ENOBUFS);
+		eh = mtod(req->mb, struct ether_header *);
+	} else {
 		return (EOPNOTSUPP);
-
-	if (req->bufsize < ETHER_HDR_LEN)
-		return (ENOMEM);
-
-	eh = (struct ether_header *)req->buf;
+	}
 	lladdr = req->lladdr;
 	req->lladdr_off = 0;
 
@@ -182,6 +188,9 @@ ether_requestencap(struct ifnet *ifp, struct if_encap_req *req)
 
 		if (req->flags & IFENCAP_FLAG_BROADCAST)
 			lladdr = ifp->if_broadcastaddr;
+		break;
+	case AF_PACKET:
+		etype = req->proto;
 		break;
 	default:
 		return (EAFNOSUPPORT);
@@ -538,6 +547,11 @@ ether_input_internal(struct ifnet *ifp, struct mbuf *m)
 	 * Give bpf a chance at the packet.
 	 */
 	ETHER_BPF_MTAP(ifp, m);
+
+	/*
+	 * Check if any of the AF_PACKET sockets want this packet.
+	 */
+	packet_input_check(m, ifp, etype);
 
 	/*
 	 * If the CRC is still on the packet, trim it off. We do this once

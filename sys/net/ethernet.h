@@ -99,6 +99,7 @@ struct ether_vlan_header {
  *  However, there are some conflicts.
  */
 
+#define	ETHERTYPE_ALL		0x0003	/* Every packet */
 #define	ETHERTYPE_8023		0x0004	/* IEEE 802.3 packet */
 		   /* 0x0101 .. 0x1FF	   Experimental */
 #define	ETHERTYPE_PUP		0x0200	/* Xerox PUP protocol - see 0A00 */
